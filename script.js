@@ -47,6 +47,8 @@ drawSnake:()=>{
 },
 
 drawFood:()=>{
+
+    ctx.fillStyle= "red";
     
     ctx.fillRect(
         GameState.food[i].x * 20,
@@ -54,25 +56,154 @@ drawFood:()=>{
         18 - 2,
         18 - 2
     );
+
+    if(GameState.bigFood && GameState.blinkState){
+
+        ctx.fillStyle= "gold";
+    
+    ctx.fillRect(
+        GameState.bigFood[i].x * 20,
+        GameState.bigFood[i].y * 20,
+        18 - 2,
+        18 - 2
+    );
+    }
+
 },
 
-update:()=>{},
 
-generateFood:()=>{},
+update:()=>{
 
-spawnBigFood:()=>{},
+const head={x:GameState.snake[0].x+GameState.direction.x,y:GameState.snake[0].y+GameState.direction.y}
 
-startBigFoodBlink:()=>{},
+if(head.x<0|| head.x>=NodeE.canvas.width/20||head.y<0||head.y>=NodeE.canvas.height/20 ||
+   GameState.snake.some(segment => segment.x === head.x&& segment.y === head.y)
 
-changeDirection:()=>{},
+) {
 
-gameLoop:()=>{},
-
-startGame:()=>{},
-
-
-
-
-
+    clearInterval(GameState.gameInterval);
+    clearInterval(GameState.bigFoodBlinkInterval);
+    NodeE.gameOverMessage.style.display="block";
+    return;
 
 }
+
+if(
+    head.x === GameState.food.x  &&
+    head.y === GameState.food.x
+   
+){
+    GameState.score+=1;
+    GameState.regularFoodEaten++;
+
+
+
+    if(GameState.regularFoodEaten>=5){
+        funcE.spawnBigFood();
+        GameState.regularFoodEaten=0;
+    };
+
+    GameState.food=funcE.generateFood();
+
+
+} else if(
+    GameState.bigFood &&
+    head.x === GameState.bigFood.x &&
+    head.y === GameState.bigFood.y
+) {
+    GameState.score += GameState.bigFodValue;
+
+    clearInterval(GameState.bigFoodBlinkInterval);
+    GameState.bigFood = null;
+} else{
+    GameState.snake.pop();
+}
+
+GameState.snake.unshift(head);
+
+ const ctx=NodeE.canvas.getContext("2d");
+
+ ctx.fillRect(0,0,NodeE.canvas.width,NodeE.canvas.height);
+
+
+},
+
+
+
+
+generateFood:()=>{
+
+    const x= Math.floor(Math.random()* NodeE.canvas.width/20);
+    const y= Math.floor(Math.random()* NodeE.canvas.height/20);
+    return{x,y};
+
+},
+
+spawnBigFood:()=>{
+
+GameState.bigFood=funcE.generateFood();
+funcE.startBigFoodBlink();
+
+
+
+},
+
+startBigFoodBlink:()=>{
+
+GameState.blinkState=true;
+GameState.bigFoodBlinkInterval=setInterval(()=>{
+    
+    GameState.blinkState=!GameState.blinkState;
+}, 300);
+
+
+},
+
+changeDirection:(event)=>{
+
+    switch (event.key) {
+        case "ArrowUp":
+            if(GameState.direction.y===0)GameState.direction={x:0,y:-1};
+            break;
+             case "ArrowDown":
+                 if(GameState.direction.y===0)GameState.direction={x:0,y:1};
+                 break;
+
+                 case "ArrowLeft":
+                    if(GameState.direction.x===0)GameState.direction={x:-1,y:0};
+                    break;
+                    case "ArrowRight":
+                       if(GameState.direction.x===0)GameState.direction={x:1,y:0};
+                       break;
+
+    }
+},
+
+gameLoop:()=>{
+
+funcE.update();
+
+},
+
+startGame:()=>{
+
+funcE.getSpeed();
+GameState.snake=[{x:10, y:10}];
+GameState.direction={x:1,y:0}
+GameState.food=funcE.generateFood();
+GameState.score=0;
+GameState.regularFoodEaten=0;
+GameState.bigFood=null;
+NodeE.gameOverMessage.style.display="none";
+GameState.gameInterval=setInterval(funcE.gameLoop,GameState.speed)
+
+
+
+},
+
+
+};
+
+
+document.addEventListener("keydown", funcE.changeDirection);
+funcE.startGame();
